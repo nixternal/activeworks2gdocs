@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#   aw2gd.py - Last modified: Fri 30 Dec 2011 05:03:55 PM CST
+#   aw2gd.py - Last modified: Tue 03 Jan 2012 11:03:05 AM CST
 #
 #   Copyright (C) 2011 Richard A. Johnson <nixternal@gmail.com>
 #
@@ -101,7 +101,7 @@ def get_events(events):
         return None, str('1'), None, None
     elif '#3' in events:
         return None, None, str('1'), None
-    elif '#4' in events:
+    elif '#4' in events or 'John Fraser Memorial Time Trial' in events:
         return None, None, None, str('1')
 
 
@@ -127,6 +127,7 @@ def cleanup_rider_list(riderlist):
     riders = []
     for rider in riderlist:
         nrider = {}
+        print rider['Name: Last name'], rider['Name: First name']
         nrider['tt1'], nrider['tt2'], nrider['tt3'], nrider['tt4'] = get_events(
                 rider['Registration category'])
         nrider['rcvddate'], nrider['rcvdtime'] = rider['Registration time'].split(' ')
