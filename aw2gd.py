@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#   aw2gd.py - Last modified: Tue 03 Jan 2012 11:03:05 AM CST
+#   aw2gd.py - Last modified: Tue 03 Jan 2012 11:05:04 AM CST
 #
 #   Copyright (C) 2011 Richard A. Johnson <nixternal@gmail.com>
 #
@@ -127,7 +127,6 @@ def cleanup_rider_list(riderlist):
     riders = []
     for rider in riderlist:
         nrider = {}
-        print rider['Name: Last name'], rider['Name: First name']
         nrider['tt1'], nrider['tt2'], nrider['tt3'], nrider['tt4'] = get_events(
                 rider['Registration category'])
         nrider['rcvddate'], nrider['rcvdtime'] = rider['Registration time'].split(' ')
