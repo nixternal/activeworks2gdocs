@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#   aw2gd.py - Last modified: Tue 03 Jan 2012 11:05:04 AM CST
+#   aw2gd.py - Last modified: Wed 04 Jan 2012 10:11:31 AM CST
 #
 #   Copyright (C) 2011 Richard A. Johnson <nixternal@gmail.com>
 #
@@ -147,16 +147,22 @@ def cleanup_rider_list(riderlist):
         nrider['emphone'] = rider['Emergency contact phone'].title()
         nrider['abrlicense'] = rider['ABR License Number']
         nrider['club'] = rider['Cycling club'].title()
-        nrider['catprimary'] = '%s%s' % (nrider['gender'],
+        if nrider['gender'] == 'F':
+            catsex = 'W'
+        else:
+            catsex = 'M'
+        nrider['catprimary'] = '%s%s' % (catsex,
                 get_category(True, rider['Date of birth']))
         nrider['timeprefstart'] = rider['Desired Start Time']
         for key in TIMESLOTS.keys():
             if nrider['timeprefstart'] == TIMESLOTS[key]:
                 nrider['timeprefstart'] = key
         if rider['Category']:
-            nrider['catsecondary'] = '%s%s' % (nrider['gender'],
+            if 'Age Group' in rider['Category']:
+                nrider['catsecondary'] = nrider['catprimary']
+            else:
+                nrider['catsecondary'] = '%s%s' % (catsex,
                     get_category(False, rider['Category']))
-            #nrider['catsecondary'] = get_category(False, rider['Category'])
             nrider_ = nrider.copy()
             nrider_['catprimary'] = nrider_['catsecondary']
             del nrider_['catsecondary']
