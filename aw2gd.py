@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#   aw2gd.py - Last modified: Wed 04 Jan 2012 10:11:31 AM CST
+#   aw2gd.py - Last modified: Tue 14 Feb 2012 01:23:57 AM CST
 #
 #   Copyright (C) 2011 Richard A. Johnson <nixternal@gmail.com>
 #
@@ -95,6 +95,10 @@ def get_events(events):
     """Parse the data and return the events rider is participating in."""
     if 'Series 4 Race Deal' in events:
         return str('1'), str('1'), str('1'), str('1')
+    elif 'Last 3 Events' in events:
+        return None, str('1'), str('1'), str('1')
+    elif 'Last 2 Events' in events:
+        return None, None, str('1'), str('1')
     elif '#1' in events:
         return str('1'), None, None, None
     elif '#2' in events:
