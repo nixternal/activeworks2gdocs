@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#   aw2gd.py - Last modified: Mon 10 Dec 2012 05:32:16 PM CST
+#   aw2gd.py - Last modified: Tue 14 Feb 2012 01:23:57 AM CST
 #
 #   Copyright (C) 2011 Richard A. Johnson <nixternal@gmail.com>
 #
@@ -22,6 +22,8 @@ Spreadsheet"""
 
 import csv
 import getopt
+import os
+import re
 import sys
 
 try:
@@ -38,11 +40,14 @@ except ImportError:
     print "Either 'python-gdata' is not installed or it isn't configured."
     sys.exit(3)
 
+# DEBUG - Enabled prints to stdout, Disabled goes to GDocs
+DEBUG = 0
+
 # Google Docs Spreadsheet Name
-SPREADSHEET = '2013_TTSeries_Reg_Results'
+SPREADSHEET = '2012_TTSeries_Reg_Results'
 
 # Event year for calculating racing age
-YEAR = 2013
+YEAR = 2012
 
 # Categories
 CATS = {
@@ -61,11 +66,10 @@ CATS = {
     '65-69': (65, 69),
     '70-74': (70, 74),
     '75-79': (75, 79),
-      '80+': (80, 120),
+    '80+'  : (80, 120),
     # Ability Categories
-    '1/2': ('Category 1/2 (Elite Level)'),
-      '3': ('Category 3 (Novice Level)'),
-      '4': ('Category 4 (Amateur Level)')
+    '1/2/3': ('Category 1/2/3 (Elite Level)'),
+    '4/5'  : ('Category 4/5 (Amateur Level)')
 }
 
 # Time Slots
@@ -114,8 +118,7 @@ def get_category(cattype, catdata):
         racingage = YEAR - int(catdata.split('/')[2])
         for cat in CATS.keys():
             if '1/2/3' not in cat and '4/5' not in cat:
-                if racingage in range(
-                        int(CATS[cat][0]), int(CATS[cat][1]) + 1):
+                if racingage in range(int(CATS[cat][0]), int(CATS[cat][1])+1):
                     return cat
     for cat in CATS.keys():
         if catdata in CATS[cat]:
@@ -128,10 +131,9 @@ def cleanup_rider_list(riderlist):
     riders = []
     for rider in riderlist:
         nrider = {}
-        nrider['tt1'], nrider['tt2'], nrider['tt3'], nrider['tt4'] = \
-                get_events(rider['Registration category'])
-        nrider['rcvddate'], nrider['rcvdtime'] = \
-                rider['Registration time'].split(' ')
+        nrider['tt1'], nrider['tt2'], nrider['tt3'], nrider['tt4'] = get_events(
+                rider['Registration category'])
+        nrider['rcvddate'], nrider['rcvdtime'] = rider['Registration time'].split(' ')
         nrider['namefirst'] = rider['Name: First name'].title()
         nrider['namelast'] = rider['Name: Last name'].title()
         nrider['bdate'] = rider['Date of birth']
@@ -195,10 +197,10 @@ def send_to_gdocs(user, pw, riders):
     if snum is None:
         sys.exit(1)
     keyparts = keyfeed.entry[snum].id.text.split('/')
-    currkey = keyparts[len(keyparts) - 1]
+    currkey = keyparts[len(keyparts)-1]
     wkshtfeed = gdclient.GetWorksheetsFeed(currkey)
     wkshtparts = wkshtfeed.entry[0].id.text.split('/')
-    currwkshtid = wkshtparts[len(wkshtparts) - 1]
+    currwkshtid = wkshtparts[len(wkshtparts)-1]
     pbar = ProgressBar(widgets=[SimpleProgress(), Bar()],
             maxval=len(riders)).start()
     counter = 0
@@ -225,13 +227,8 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["user=", "pw=",
             "ifile="])
-    except getopt.error:
-        print '%s %s %s %s' % (
-                'aw2gd.py',
-                '--user [google username]',
-                '--pw [google password]',
-                '--ifile [CSV file]'
-        )
+    except getopt.error, msg:
+        print 'aw2gd.py --user [google username] --pw [google password] --ifile [CSV file]'
         sys.exit(2)
     for o, a in opts:
         if o == "--user":
@@ -241,12 +238,7 @@ def main():
         elif o == "--ifile":
             ifile = a
     if not user or not pw or not ifile:
-        print '%s %s %s %s' % (
-                'aw2gd.py',
-                '--user [google username]',
-                '--pw [google password]',
-                '--ifile [CSV file]'
-        )
+        print 'aw2gd.py --user [google username] --pw [google password] --ifile [CSV file]'
         sys.exit(2)
 
     sys.stdout.write(
@@ -277,7 +269,7 @@ def main():
                     counter += 1
             except KeyError:
                 pass
-        print 'Total registrants parsed: %s ' % (len(riders) - counter)
+        print 'Total registrants parsed: %s ' % (len(riders)-counter)
         print 'Total racing twice: %s' % counter
         print 'Total racing: %s' % len(riders)
         print '\n~~~~~ Categories for people racing twice ~~~~~'
@@ -286,28 +278,23 @@ def main():
             try:
                 if rider['catsecondary']:
                     counter += 1
-                    print '%s - %s - %s - %s - %s, %s' % (
-                        counter,
-                        rider['bdate'],
-                        rider['catprimary'],
-                        rider['catsecondary'],
-                        rider['namelast'],
+                    print '%s - %s - %s - %s - %s, %s' % (counter, rider['bdate'],
+                        rider['catprimary'], rider['catsecondary'], rider['namelast'],
                         rider['namefirst'])
             except KeyError:
                 pass
         print '\n~~~~~ Riders Preferred Timeslots ~~~~~'
-        ts1, ts2, ts3, ts4, ts5 = 0
+        ts1 = 0
+        ts2 = 0
+        ts3 = 0
+        ts4 = 0
+        ts5 = 0
         for rider in riders:
-            if int(rider['timeprefstart']) == 1:
-                ts1 += 1
-            elif int(rider['timeprefstart']) == 2:
-                ts2 += 1
-            elif int(rider['timeprefstart']) == 3:
-                ts3 += 1
-            elif int(rider['timeprefstart']) == 4:
-                ts4 += 1
-            elif int(rider['timeprefstart']) == 5:
-                ts5 += 1
+            if int(rider['timeprefstart']) == 1: ts1+=1
+            elif int(rider['timeprefstart']) == 2: ts2+=1
+            elif int(rider['timeprefstart']) == 3: ts3+=1
+            elif int(rider['timeprefstart']) == 4: ts4+=1
+            elif int(rider['timeprefstart']) == 5: ts5+=1
         print '9:30am or earlier:\t%s' % ts1
         print '9:30am to 11:00am:\t%s' % ts2
         print '11:00am to 1:00pm:\t%s' % ts3
